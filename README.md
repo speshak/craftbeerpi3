@@ -45,6 +45,6 @@ The contents of this folder will be mounted to `/usr/src/craftbeerpi3` and the s
 
 ## Donation
 
-CraftBeerPi is a free & open source project. If you like to support the project I happy about a donation:
+CraftBeerPi is a free & open source project. If you would like to support the project I would be happy about a donation:
 
 [![Donate](https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2X9KR98KJ8YZQ)
