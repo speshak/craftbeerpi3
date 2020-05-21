@@ -33,7 +33,6 @@ from modules.addon.endpoints import initPlugins
 import modules.ui
 import modules.system
 import modules.buzzer
-import modules.stats
 import modules.kettle
 import modules.recipe_import
 import modules.core.db_mirgrate
