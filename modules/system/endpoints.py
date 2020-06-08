@@ -100,7 +100,7 @@ class SystemView(FlaskView):
 
     @route('/dump', methods=['GET'])
     def dump(self):
-        return json.dumps(cbpi.cache)
+        return Response(json.dumps(cbpi.cache), mimetype='application/json')
 
     @route('/endpoints', methods=['GET'])
     def endpoints(self):
