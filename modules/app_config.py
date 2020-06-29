@@ -7,17 +7,26 @@ from flask import Flask, render_template, redirect, json, g
 from flask_socketio import SocketIO, emit
 
 import logging
-
-
+import logging.handlers
 
 from modules.core.core import CraftBeerPi, ActorBase, SensorBase
 from modules.core.db import DBModel
 
+
+def log_setup():
+    log_handler = logging.handlers.WatchedFileHandler('./logs/app.log')
+    formatter = logging.Formatter('%(asctime)-15s - %(levelname)s - %(message)s')
+    log_handler.setFormatter(formatter)
+    logger = logging.getLogger()
+    logger.addHandler(log_handler)
+    logger.setLevel(logging.INFO)
+
+
+
 app = Flask(__name__)
+log_setup()
 
-FORMAT = '%(asctime)-15s - %(levelname)s - %(message)s'
 
-logging.basicConfig(filename='./logs/app.log',level=logging.INFO, format=FORMAT)
 app.config['SECRET_KEY'] = 'craftbeerpi'
 app.config['UPLOAD_FOLDER'] = './upload'
 
