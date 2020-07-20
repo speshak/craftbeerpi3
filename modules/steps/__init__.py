@@ -7,7 +7,8 @@ from modules.core.baseview import BaseView
 
 
 class Step(DBModel):
-    __fields__ = ["name","type", "stepstate", "state", "start", "end", "order", "config"]
+    __fields__ = ["name", "type", "stepstate", "state",
+                  "start", "end", "order", "config"]
     __table_name__ = "step"
     __json_fields__ = ["config", "stepstate"]
     __order_by__ = "order"
@@ -16,14 +17,16 @@ class Step(DBModel):
     @classmethod
     def get_max_order(cls):
         cur = get_db().cursor()
-        cur.execute("SELECT max(step.'order') as 'order' FROM %s" % cls.__table_name__)
+        cur.execute("SELECT max(step.'order') as 'order' FROM %s"
+                    % cls.__table_name__)
         r = cur.fetchone()
         return r.get("order")
 
     @classmethod
     def get_by_state(cls, state, order=True):
         cur = get_db().cursor()
-        cur.execute("SELECT * FROM %s WHERE state = ? ORDER BY %s.'order'" % (cls.__table_name__,cls.__table_name__,), state)
+        cur.execute("SELECT * FROM %s WHERE state = ? ORDER BY %s.'order'"
+                    % (cls.__table_name__, cls.__table_name__,), state)
         r = cur.fetchone()
         if r is not None:
             return cls(r)
@@ -39,19 +42,24 @@ class Step(DBModel):
     @classmethod
     def reset_all_steps(cls):
         cur = get_db().cursor()
-        cur.execute("UPDATE %s SET state = 'I', stepstate = NULL , start = NULL, end = NULL " % cls.__table_name__)
+        cur.execute("""UPDATE %s SET state = 'I',
+                        stepstate = NULL,
+                        start = NULL,
+                        end = NULL""" % cls.__table_name__)
         get_db().commit()
 
     @classmethod
     def update_state(cls, id, state):
         cur = get_db().cursor()
-        cur.execute("UPDATE %s SET state = ? WHERE id =?" % cls.__table_name__, (state, id))
+        cur.execute("UPDATE %s SET state = ? WHERE id =?"
+                    % cls.__table_name__, (state, id))
         get_db().commit()
 
     @classmethod
     def update_step_state(cls, id, state):
         cur = get_db().cursor()
-        cur.execute("UPDATE %s SET stepstate = ? WHERE id =?" % cls.__table_name__, (json.dumps(state),id))
+        cur.execute("UPDATE %s SET stepstate = ? WHERE id =?"
+                    % cls.__table_name__, (json.dumps(state), id))
         get_db().commit()
 
     @classmethod
@@ -60,12 +68,14 @@ class Step(DBModel):
 
         for e in new_order:
 
-            cur.execute("UPDATE %s SET '%s' = ? WHERE id = ?" % (cls.__table_name__, "order"), (e[1], e[0]))
+            cur.execute("UPDATE %s SET '%s' = ? WHERE id = ?"
+                        % (cls.__table_name__, "order"), (e[1], e[0]))
         get_db().commit()
 
 
 class StepView(BaseView):
     model = Step
+
     def _pre_post_callback(self, data):
         order = self.model.get_max_order()
         data["order"] = 1 if order is None else order + 1
@@ -98,7 +108,7 @@ class StepView(BaseView):
     def stop_step(self):
         '''
         stop active step
-        :return: 
+        :return:
         '''
         step = cbpi.cache.get("active_step")
         cbpi.cache["active_step"] = None
@@ -110,7 +120,7 @@ class StepView(BaseView):
     def resetCurrentStep(self):
         '''
         Reset current step
-        :return: 
+        :return:
         '''
         step = cbpi.cache.get("active_step")
 
@@ -136,7 +146,13 @@ class StepView(BaseView):
         # copy config to stepstate
         # init step
         cfg = step.config.copy()
-        cfg.update(dict(name=step.name, api=cbpi, id=step.id, timer_end=None, managed_fields=get_manged_fields_as_array(type_cfg)))
+        cfg.update({
+            "name": step.name,
+            "api": cbpi,
+            "id": step.id,
+            "timer_end": None,
+            "managed_fields": get_manged_fields_as_array(type_cfg)
+            })
         instance = type_cfg.get("class")(**cfg)
         instance.init()
         # set step instance to ache
@@ -167,6 +183,7 @@ class StepView(BaseView):
         cbpi.emit("UPDATE_ALL_STEPS", Step.get_all())
         return ('', 204)
 
+
 def get_manged_fields_as_array(type_cfg):
 
     result = []
@@ -175,6 +192,7 @@ def get_manged_fields_as_array(type_cfg):
         result.append(f.get("name"))
 
     return result
+
 
 @cbpi.try_catch(None)
 def init_after_startup():
@@ -188,8 +206,6 @@ def init_after_startup():
     if step is not None:
 
         # get the type
-
-
         type_cfg = cbpi.cache.get("step_types").get(step.type)
 
         if type_cfg is None:
@@ -197,10 +213,15 @@ def init_after_startup():
             return
 
         cfg = step.stepstate.copy()
-        cfg.update(dict(api=cbpi, id=step.id, managed_fields=get_manged_fields_as_array(type_cfg)))
+        cfg.update({
+            "api": cbpi,
+            "id": step.id,
+            "managed_fields": get_manged_fields_as_array(type_cfg)
+           })
         instance = type_cfg.get("class")(**cfg)
         instance.init()
         cbpi.cache["active_step"] = instance
+
 
 @cbpi.initalizer(order=2000)
 def init(cbpi):
@@ -215,11 +236,12 @@ def init(cbpi):
         init_after_startup()
     cbpi.add_cache_callback("steps", get_all)
 
+
 @cbpi.backgroundtask(key="step_task", interval=0.1)
 def execute_step(api):
     '''
-    Background job which executes the step 
-    :return: 
+    Background job which executes the step
+    :return:
     '''
     with cbpi.app.app_context():
         step = cbpi.cache.get("active_step")

@@ -1,11 +1,12 @@
-from flask import request
-from flask_classy import FlaskView, route
-from modules import cbpi, socketio
+from flask_classy import route
+from modules import cbpi
 from modules.core.baseview import BaseView
 from modules.core.db import DBModel
 
+
 class Kettle(DBModel):
-    __fields__ = ["name","sensor", "heater", "automatic", "logic", "config", "agitator", "target_temp"]
+    __fields__ = ["name", "sensor", "heater", "automatic",
+                  "logic", "config", "agitator", "target_temp"]
     __table_name__ = "kettle"
     __json_fields__ = ["config"]
 
@@ -22,14 +23,13 @@ class Kettle2View(BaseView):
     def post_init_callback(cls, obj):
         obj.state = False
 
-
     def _post_post_callback(self, m):
         m.state = False
 
     def _pre_put_callback(self, m):
         try:
             m.instance.stop()
-        except:
+        except Exception:
             pass
 
     def _post_put_callback(self, m):
@@ -52,13 +52,21 @@ class Kettle2View(BaseView):
             # Start controller
             if kettle.logic is not None:
                 cfg = kettle.config.copy()
-                cfg.update(dict(api=cbpi, kettle_id=kettle.id, heater=kettle.heater, sensor=kettle.sensor))
+                cfg.update({
+                    "api": cbpi,
+                    "kettle_id": kettle.id,
+                    "heater": kettle.heater,
+                    "sensor": kettle.sensor
+                })
                 instance = cbpi.get_controller(kettle.logic).get("class")(**cfg)
                 instance.init()
                 kettle.instance = instance
+
                 def run(instance):
                     instance.run()
-                t = self.api.socketio.start_background_task(target=run, instance=instance)
+
+                self.api.socketio.start_background_task(target=run,
+                                                        instance=instance)
             kettle.state = not kettle.state
             cbpi.emit("UPDATE_KETTLE", cbpi.cache.get("kettle").get(id))
         else:
@@ -67,6 +75,7 @@ class Kettle2View(BaseView):
             kettle.state = not kettle.state
             cbpi.emit("UPDATE_KETTLE", cbpi.cache.get("kettle").get(id))
         return ('', 204)
+
 
 @cbpi.event("SET_TARGET_TEMP")
 def set_target_temp(id, temp):
@@ -77,7 +86,8 @@ def set_target_temp(id, temp):
     :return: None
     '''
 
-    Kettle2View().postTargetTemp(id,temp)
+    Kettle2View().postTargetTemp(id, temp)
+
 
 @cbpi.backgroundtask(key="read_target_temps", interval=5)
 def read_target_temps(api):
@@ -85,12 +95,12 @@ def read_target_temps(api):
     background process that reads all passive sensors in interval of 1 second
     :return: None
     """
-    result = {}
     for key, value in cbpi.cache.get("kettle").iteritems():
         cbpi.save_to_file(key, value.target_temp, prefix="kettle")
+
 
 @cbpi.initalizer()
 def init(cbpi):
     Kettle2View.api = cbpi
-    Kettle2View.register(cbpi.app,route_base='/api/kettle')
+    Kettle2View.register(cbpi.app, route_base='/api/kettle')
     Kettle2View.init_cache()

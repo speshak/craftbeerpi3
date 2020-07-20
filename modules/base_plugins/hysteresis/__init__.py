@@ -5,11 +5,15 @@ from modules.core.props import Property
 
 @cbpi.controller
 class Hysteresis(KettleController):
-
     # Custom Properties
-
-    on = Property.Number("Offset On", True, 0, description="Offset below target temp when heater should switched on. Should be bigger then Offset Off")
-    off = Property.Number("Offset Off", True, 0, description="Offset below target temp when heater should switched off. Should be smaller then Offset Off")
+    on = Property.Number("Offset On", True, 0,
+                         description="Offset below target temp when heater "
+                         "should switched on. Should be bigger "
+                         "than Offset Off")
+    off = Property.Number("Offset Off", True, 0,
+                          description="Offset below target temp when heater "
+                          "should switched off. Should be smaller "
+                          "than Offset Off")
 
     def stop(self):
         '''
@@ -20,13 +24,11 @@ class Hysteresis(KettleController):
         super(KettleController, self).stop()
         self.heater_off()
 
-
-
-
     def run(self):
         '''
-        Each controller is exectuted in its own thread. The run method is the entry point
-        :return: 
+        Each controller is exectuted in its own thread. The run method is the
+        entry point
+        :return:
         '''
         while self.is_running():
 
@@ -35,4 +37,3 @@ class Hysteresis(KettleController):
             elif self.get_temp() >= self.get_target_temp() - float(self.off):
                 self.heater_off()
             self.sleep(1)
-

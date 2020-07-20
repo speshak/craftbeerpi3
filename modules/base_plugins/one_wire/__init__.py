@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
-from subprocess import Popen, PIPE, call
+from subprocess import call
 
 from modules import cbpi, app
 from modules.core.hardware import SensorPassive
-import json
-import os, re, threading, time
-from flask import Blueprint, render_template, request
+import threading
+import time
+from flask import Blueprint
 from modules.core.props import Property
 
 blueprint = Blueprint('one_wire', __name__)
 
 temp = 22
+
 
 def getSensors():
     try:
@@ -21,16 +22,12 @@ def getSensors():
                 cbpi.app.logger.info("Device %s Found (Family: 28/10, Thermometer on GPIO4 (w1))" % dirname)
                 arr.append(dirname)
         return arr
-    except:
+    except Exception:
         return []
 
 
-
-
 class myThread (threading.Thread):
-
     value = 0
-
 
     def __init__(self, sensor_name):
         threading.Thread.__init__(self)
@@ -45,30 +42,36 @@ class myThread (threading.Thread):
         self.runnig = False
 
     def run(self):
-
         while self.runnig:
             try:
                 app.logger.info("READ TEMP")
-                ## Test Mode
+                # Test Mode
                 if self.sensor_name is None:
                     return
                 with open('/sys/bus/w1/devices/w1_bus_master1/%s/w1_slave' % self.sensor_name, 'r') as content_file:
                     content = content_file.read()
                     if (content.split('\n')[0].split(' ')[11] == "YES"):
-                        temp = float(content.split("=")[-1]) / 1000  # temp in Celcius
+                        # temp in Celcius
+                        temp = float(content.split("=")[-1]) / 1000
                         self.value = temp
-            except:
+            except Exception:
                 pass
 
             time.sleep(4)
 
 
-
 @cbpi.sensor
 class ONE_WIRE_SENSOR(SensorPassive):
-
-    sensor_name = Property.Select("Sensor", getSensors(), description="The OneWire sensor address.")
-    offset = Property.Number("Offset", True, 0, description="Offset which is added to the received sensor data. Positive and negative values are both allowed.")
+    sensor_name = Property.Select("Sensor",
+                                  getSensors(),
+                                  description="The OneWire sensor address.")
+    offset = Property.Number("Offset",
+                             True,
+                             0,
+                             description="Offset which is added to the "
+                                         "received sensor data. Positive"
+                                         " and negative values are both "
+                                         "allowed.")
 
     def init(self):
 
@@ -83,25 +86,26 @@ class ONE_WIRE_SENSOR(SensorPassive):
     def stop(self):
         try:
             self.t.stop()
-        except:
+        except Exception:
             pass
 
     def read(self):
         if self.get_config_parameter("unit", "C") == "C":
             self.data_received(round(self.t.value + self.offset_value(), 2))
         else:
-            self.data_received(round(9.0 / 5.0 * self.t.value + 32 + self.offset_value(), 2))
+            self.data_received(round(9.0 / 5.0 * self.t.value + 32 +
+                               self.offset_value(), 2))
 
     @cbpi.try_catch(0)
     def offset_value(self):
         return float(self.offset)
-            
+
     @classmethod
     def init_global(self):
         try:
             call(["modprobe", "w1-gpio"])
             call(["modprobe", "w1-therm"])
-        except Exception as e:
+        except Exception:
             pass
 
 
@@ -114,5 +118,4 @@ def set_temp(t):
 
 @cbpi.initalizer()
 def init(cbpi):
-
     cbpi.app.register_blueprint(blueprint, url_prefix='/api/one_wire')

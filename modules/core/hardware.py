@@ -44,14 +44,12 @@ class SensorBase(Base):
     last_value = 0
 
     def init(self):
-        print "INIT Base SENSOR"
+        print("INIT Base SENSOR")
 
     def stop(self):
-        print "STOP SENSOR"
+        print("STOP SENSOR")
 
     def data_received(self, data):
-
-
         self.last_value = data
         self.api.receive_sensor_value(self.id, data)
 
@@ -65,8 +63,8 @@ class SensorBase(Base):
 
         return {"value": self.last_value, "unit": self.get_unit()}
 
-class SensorActive(SensorBase):
 
+class SensorActive(SensorBase):
     __running = False
 
     def is_running(self):
@@ -79,14 +77,13 @@ class SensorActive(SensorBase):
     def stop(self):
         self.__running = False
 
-
     def execute(self):
         pass
 
 
 class SensorPassive(SensorBase):
     def init(self):
-        print "INIT PASSIV SENSOR"
+        print("INIT PASSIV SENSOR")
         pass
 
     def read(self):

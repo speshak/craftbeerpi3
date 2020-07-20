@@ -1,17 +1,13 @@
 from flask import json, request
 from flask_classy import FlaskView, route
-from git import Repo, Git
 import sqlite3
 from modules.app_config import cbpi
 from werkzeug.utils import secure_filename
-import pprint
-import time
 import os
 from modules.steps import Step, StepView
 
 
 class KBH(FlaskView):
-
     @route('/', methods=['GET'])
     def get(self):
         conn = None
@@ -29,8 +25,9 @@ class KBH(FlaskView):
                 result.append({"id": row[0], "name": row[1], "brewed": row[2]})
             return json.dumps(result)
         except Exception as e:
-            print e
-            self.api.notify(headline="Failed to load KHB database", message="ERROR", type="danger")
+            print(e)
+            self.api.notify(headline="Failed to load KHB database",
+                            message="ERROR", type="danger")
             return ('', 500)
         finally:
             if conn:

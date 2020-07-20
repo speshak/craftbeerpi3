@@ -27,7 +27,6 @@ class BaseView(FlaskView):
     def _pre_post_callback(self, data):
         pass
 
-
     def _post_post_callback(self, m):
         pass
 
@@ -49,19 +48,19 @@ class BaseView(FlaskView):
     def _post_put_callback(self, m):
         pass
 
-
     @route('/<int:id>', methods=["PUT"])
     def put(self, id):
         data = request.json
         data["id"] = id
         try:
             del data["instance"]
-        except:
+        except Exception:
             pass
         if self.api.cache.get(self.cache_key) is not None:
             self._pre_put_callback(self.api.cache.get(self.cache_key)[id])
             self.api.cache.get(self.cache_key)[id].__dict__.update(**data)
-            m = self.model.update(**self.api.cache.get(self.cache_key)[id].__dict__)
+            m = self.model.update(**self.api.cache.get(self.cache_key)
+                                  [id].__dict__)
             self._post_put_callback(self.api.cache.get(self.cache_key)[id])
             return json.dumps(self.api.cache.get(self.cache_key)[id])
         else:
@@ -69,7 +68,6 @@ class BaseView(FlaskView):
 
             self._post_put_callback(m)
             return json.dumps(m)
-
 
     def _pre_delete_callback(self, m):
         pass
@@ -82,11 +80,11 @@ class BaseView(FlaskView):
         if self.api.cache.get(self.cache_key) is not None:
             self._pre_delete_callback(self.api.cache.get(self.cache_key)[id])
             del self.api.cache.get(self.cache_key)[id]
-        m = self.model.delete(id)
+        self.model.delete(id)
 
         def _post_delete_callback(self, id):
             pass
-        return ('',204)
+        return ('', 204)
 
     @classmethod
     def post_init_callback(cls, obj):
@@ -104,6 +102,6 @@ class BaseView(FlaskView):
                     cls.api.cache[cls.cache_key].append(value)
             else:
                 cls.api.cache[cls.cache_key] = {}
-                for key, value  in cls.model.get_all().iteritems():
+                for key, value in cls.model.get_all().iteritems():
                     cls.post_init_callback(value)
                     cls.api.cache[cls.cache_key][key] = value

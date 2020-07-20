@@ -1,7 +1,8 @@
 import sqlite3
 import os
-from modules import  cbpi
+from modules import cbpi
 from db import get_db
+
 
 def execute_file(curernt_version, data):
     if curernt_version >= data["version"]:
@@ -19,8 +20,8 @@ def execute_file(curernt_version, data):
                 conn.commit()
 
     except sqlite3.OperationalError as err:
-        print "EXCEPT"
-        print err
+        cbpi.app.logger.error(err)
+
 
 @cbpi.initalizer(order=-9999)
 def init(app=None):
@@ -32,16 +33,15 @@ def init(app=None):
         try:
             cur.execute("SELECT max(version) as m FROM schema_info")
             m = cur.fetchone()
-            current_version =  m["m"]
+            current_version = m["m"]
         except:
             pass
         result = []
         for filename in os.listdir("./update"):
             if filename.endswith(".sql"):
-                d = {"version": int(filename[:filename.index('_')]), "file": filename}
+                d = {
+                    "version": int(filename[:filename.index('_')]),
+                    "file": filename
+                }
                 result.append(d)
                 execute_file(current_version, d)
-
-
-
-

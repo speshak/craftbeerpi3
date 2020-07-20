@@ -1,26 +1,11 @@
-import json
-import pprint
-import sys, os
 from flask import Flask, render_template, redirect
 from flask_socketio import SocketIO, emit
 
-import logging
-# Define the WSGI application object
 
 from app_config import *
 import pprint
 
 from modules.core.db import get_db
-
-
-@app.route('/')
-def index():
-    return redirect('ui')
-
-
-# Define the database object which is imported
-# by modules and controllers
-
 
 import modules.steps
 import modules.config
@@ -38,15 +23,20 @@ import modules.recipe_import
 import modules.core.db_mirgrate
 
 from app_config import cbpi
-# Build the database:
-# This will create the database file using SQLAlchemy
 
 
 pp = pprint.PrettyPrinter(indent=6)
 
 
+@app.route('/')
+def index():
+    return redirect('ui')
+
+
 def init_db():
-    print "INIT DB"
+    """Build the database: This will create the database file using
+    SQLAlchemy"""
+    app.logger.info("INIT DB")
     with app.app_context():
         db = get_db()
 
@@ -56,14 +46,14 @@ def init_db():
 
             db.commit()
         except Exception as e:
-            pass
+            app.logger.warn(e)
+
 
 init_db()
 initPlugins()
 cbpi.run_init()
 
 cbpi.run_background_processes()
-
 
 
 app.logger.info("##########################################")
