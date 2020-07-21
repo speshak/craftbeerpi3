@@ -1,5 +1,5 @@
 import yaml
-from flask import json, Response
+from flask import json, Response, request
 from flask_classy import FlaskView, route
 from git import Repo, Git
 
@@ -123,10 +123,10 @@ class SystemView(FlaskView):
         endpoints = {}
         re = {
             "swagger": "2.0",
-            "host": "",
+            "host": str(request.headers.get('host')),
             "info": {
-                "description": "",
-                "version": "",
+                "description": "CraftBeerPi Brewery Controller",
+                "version": "3",
                 "title": "CraftBeerPi"
             },
             "schemes": ["http"],
@@ -140,22 +140,23 @@ class SystemView(FlaskView):
             if "OPTIONS" in r.methods:
                 r.methods.remove("OPTIONS")
             for m in rule.methods:
-                endpoints[rule.rule][m] = {
+                endpoints[rule.rule][m.lower()] = {
                         "summary": "",
                         "description": "",
                         "consumes": ["application/json"],
-                        "produces": ["application/json"]}
+                        "produces": ["application/json"],
+                        "responses": {
+                            '200': {
+                                "description": "",
+                            }
+                        },
+                    }
 
-        with open("config/version.yaml", 'r') as stream:
-            y = yaml.load(stream)
-
-        pprint.pprint(y)
         pprint.pprint(re)
         return Response(yaml.dump(re), mimetype='text/yaml')
 
 
 @cbpi.initalizer()
 def init(cbpi):
-
     SystemView.api = cbpi
     SystemView.register(cbpi.app, route_base='/api/system')
