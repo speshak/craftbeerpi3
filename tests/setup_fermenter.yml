@@ -1,0 +1,67 @@
+---
+name: Fermenter Setup
+description:
+  Reusable stage to set up a fermenter with an actors, sensors and logic
+
+stages:
+  - name: Create sensor
+    id: create_sensor
+    request:
+      url: "{base_host}/api/sensor/"
+      method: POST
+      json:
+        name: "Dummy"
+        hide: false
+        type: "DummyTempSensor"
+        config:
+          temp: "68"
+    response:
+      status_code: 200
+      json:
+        mode: "A"
+      save:
+        json:
+          sensor_id: id
+
+
+  - name: Create chiller
+    id: create_chiller
+    request:
+      url: "{base_host}/api/actor/"
+      method: POST
+      json:
+        name: "Chiller"
+        hide: false
+        type: "Dummy"
+    response:
+      status_code: 200
+      json:
+        type: "Dummy"
+      save:
+        json:
+          chiller_id: id
+
+
+  - name: Create fermenter
+    id: create_fermenter
+    request:
+      url: "{base_host}/api/fermenter/"
+      method: POST
+      json:
+        name: "Fermenterr"
+        heater: ""
+        cooler: "{chiller_id}"
+        sensor: "{sensor_id}"
+        sensor2: ""
+        sensor3: ""
+        logic: "Hysteresis"
+        config:
+          cooler_offset_max: 0
+          cooler_offset_min: 0
+          heater_offset_max: 0
+          heater_offset_mix: 0
+    response:
+      status_code: 200
+      save:
+        json:
+          fermenter_id: id

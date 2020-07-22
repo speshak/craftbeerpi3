@@ -1,0 +1,37 @@
+---
+test_name: Test fermenter API
+
+includes:
+  - !include setup_fermenter.yml
+
+stages:
+  - type: ref
+    id: create_sensor
+  - type: ref
+    id: create_chiller
+  - type: ref
+    id: create_fermenter
+
+  - name: Set brew name
+    request:
+      url: "{base_host}/api/fermenter/{fermenter_id}/brewname"
+      method: POST
+      json:
+        brewname: "Test Brew"
+    response:
+      status_code: 204
+
+
+  - name: Add step
+    request:
+      url: "{base_host}/api/fermenter/{fermenter_id}/step"
+      method: POST
+      json:
+        fermenter_id: "{fermenter_id}"
+        name: "Test Step"
+        temp: "68"
+        days: "1"
+        minutes: "15"
+        hours: "12"
+    response:
+      status_code: 204

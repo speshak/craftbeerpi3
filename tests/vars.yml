@@ -1,0 +1,4 @@
+---
+name: test variables
+variables:
+  base_host: "{tavern.env_vars.BASE_HOST}"
