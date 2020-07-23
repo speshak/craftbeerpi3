@@ -1,9 +1,4 @@
-
-import json
-import sys, os
 from flask import Flask, render_template, redirect, json, g
-
-
 from flask_socketio import SocketIO, emit
 
 import logging
@@ -15,12 +10,12 @@ from modules.core.db import DBModel
 
 def log_setup():
     log_handler = logging.handlers.WatchedFileHandler('./logs/app.log')
-    formatter = logging.Formatter('%(asctime)-15s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)-15s - '
+                                  '%(levelname)s - %(message)s')
     log_handler.setFormatter(formatter)
     logger = logging.getLogger()
     logger.addHandler(log_handler)
     logger.setLevel(logging.INFO)
-
 
 
 app = Flask(__name__)
@@ -52,12 +47,13 @@ class ComplexEncoder(json.JSONEncoder):
             else:
                 return None
         except TypeError as e:
-            pass
+            app.logger.warn(e)
         return None
+
 
 app.json_encoder = ComplexEncoder
 socketio = SocketIO(app, json=json, logging=False)
-cbpi   = CraftBeerPi(app, socketio)
+cbpi = CraftBeerPi(app, socketio)
 
 app.logger.info("##########################################")
 app.logger.info("### NEW STARTUP Version 3.0")

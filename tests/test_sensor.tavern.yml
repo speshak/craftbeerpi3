@@ -1,0 +1,28 @@
+---
+test_name: Test Sensor API
+
+stages:
+  - name: Add dummy sensor
+    request:
+      url: "{base_host}/api/sensor/"
+      method: POST
+      json:
+        name: "Dummy"
+        hide: false
+        type: "DummyTempSensor"
+        config:
+          temp: "68"
+    response:
+      status_code: 200
+      json:
+        mode: "A"
+      save:
+        json:
+          sensor_id: id
+
+  - name: Remove sensor
+    request:
+      url: "{base_host}/api/sensor/{sensor_id}"
+      method: DELETE
+    response:
+      status_code: 204

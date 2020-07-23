@@ -1,9 +1,24 @@
+---
 # docker-compose file for development on a pc/mac
 version: '3.3'
 services:
   app:
     build: .
-    ports: 
+    ports:
       - 5000:5000
     volumes:
       - $PWD:/usr/src/app
+  tests:
+    build: tests
+    depends_on:
+      - app
+    volumes:
+      - $PWD/tests:/tests
+    working_dir: /tests
+    environment:
+      BASE_HOST: http://app:5000
+    command:
+      - python
+      - -m
+      - pytest
+      - /tests

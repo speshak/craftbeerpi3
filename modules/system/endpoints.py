@@ -1,5 +1,5 @@
 import yaml
-from flask import json, url_for, Response
+from flask import json, Response, request
 from flask_classy import FlaskView, route
 from git import Repo, Git
 
@@ -41,7 +41,7 @@ class SystemView(FlaskView):
         return ('', 204)
 
     @route('/tags/<name>', methods=['GET'])
-    def checkout_tag(self,name):
+    def checkout_tag(self, name):
         repo = Repo('./')
         repo.git.reset('--hard')
         o = repo.remotes.origin
@@ -59,22 +59,31 @@ class SystemView(FlaskView):
         # Tags
         tags = []
         for t in repo.tags:
-            tags.append({"name": t.name, "commit": str(t.commit), "date": t.commit.committed_date,
-                         "committer": t.commit.committer.name, "message": t.commit.message})
+            tags.append({
+                "name": t.name,
+                "commit": str(t.commit),
+                "date": t.commit.committed_date,
+                "committer": t.commit.committer.name,
+                "message": t.commit.message})
         try:
             branch_name = repo.active_branch.name
             # test1
-        except:
+        except Exception:
             branch_name = None
 
         changes = []
         commits_behind = repo.iter_commits('master..origin/master')
 
         for c in list(commits_behind):
-            changes.append({"committer": c.committer.name, "message": c.message})
+            changes.append({
+                "committer": c.committer.name,
+                "message": c.message})
 
-        return json.dumps({"tags": tags, "headcommit": str(repo.head.commit), "branchname": branch_name,
-                           "master": {"changes": changes}})
+        return json.dumps({
+            "tags": tags,
+            "headcommit": str(repo.head.commit),
+            "branchname": branch_name,
+            "master": {"changes": changes}})
 
     @route('/check_update', methods=['GET'])
     def check_update(self):
@@ -86,7 +95,9 @@ class SystemView(FlaskView):
         commits_behind = repo.iter_commits('master..origin/master')
 
         for c in list(commits_behind):
-            changes.append({"committer": c.committer.name, "message": c.message})
+            changes.append({
+                "committer": c.committer.name,
+                "message": c.message})
 
         return json.dumps(changes)
 
@@ -94,8 +105,10 @@ class SystemView(FlaskView):
     def update(self):
         repo = Repo('./')
         o = repo.remotes.origin
-        info = o.pull()
-        cbpi.notify("Pull successful", "The lasted updated was downloaded. Please restart the system")
+        o.pull()
+        cbpi.notify("Pull successful",
+                    "The lasted updated was downloaded. "
+                    "Please restart the system")
         return ('', 204)
 
     @route('/dump', methods=['GET'])
@@ -104,42 +117,46 @@ class SystemView(FlaskView):
 
     @route('/endpoints', methods=['GET'])
     def endpoints(self):
-        import urllib
-        output = []
-        vf = self.api.app.view_functions
-
         for f in self.api.app.view_functions:
-            print  f
+            print(f)
+
         endpoints = {}
-        re =  {
+        re = {
             "swagger": "2.0",
-            "host": "",
+            "host": str(request.headers.get('host')),
             "info": {
-                "description":"",
-                "version": "",
+                "description": "CraftBeerPi Brewery Controller",
+                "version": "3",
                 "title": "CraftBeerPi"
             },
             "schemes": ["http"],
             "paths": endpoints}
+
         for rule in self.api.app.url_map.iter_rules():
             r = rule
             endpoints[rule.rule] = {}
-            if "HEAD" in r.methods: r.methods.remove("HEAD")
-            if "OPTIONS" in r.methods: r.methods.remove("OPTIONS")
+            if "HEAD" in r.methods:
+                r.methods.remove("HEAD")
+            if "OPTIONS" in r.methods:
+                r.methods.remove("OPTIONS")
             for m in rule.methods:
-                endpoints[rule.rule][m] = dict(summary="", description="", consumes=["application/json"],produces=["application/json"])
+                endpoints[rule.rule][m.lower()] = {
+                        "summary": "",
+                        "description": "",
+                        "consumes": ["application/json"],
+                        "produces": ["application/json"],
+                        "responses": {
+                            '200': {
+                                "description": "",
+                            }
+                        },
+                    }
 
-        with open("config/version.yaml", 'r') as stream:
-
-            y = yaml.load(stream)
-        pprint.pprint(y)
         pprint.pprint(re)
         return Response(yaml.dump(re), mimetype='text/yaml')
 
 
-
 @cbpi.initalizer()
 def init(cbpi):
-
     SystemView.api = cbpi
     SystemView.register(cbpi.app, route_base='/api/system')

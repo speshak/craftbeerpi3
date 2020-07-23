@@ -1,0 +1,19 @@
+---
+test_name: Test system endpoints
+
+stages:
+  - name: Test dump
+    request:
+      url: "{base_host}/api/system/dump"
+      method: GET
+    response:
+      status_code: 200
+
+  - name: Test Swagger
+    request:
+      url: "{base_host}/api/system/endpoints"
+      method: GET
+    response:
+      status_code: 200
+      headers:
+        content-type: !re_match "text/yaml"
