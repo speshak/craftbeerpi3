@@ -23,11 +23,11 @@ class GPIOSimple(ActorBase):
         GPIO.output(int(self.gpio), 0)
 
     def on(self, power=0):
-        cbpi.app.logger("GPIO ON %s" % str(self.gpio))
+        cbpi.app.logger.info("GPIO ON %s" % str(self.gpio))
         GPIO.output(int(self.gpio), 1)
 
     def off(self):
-        cbpi.app.logger("GPIO OFF %s" % str(self.gpio))
+        cbpi.app.logger.info("GPIO OFF %s" % str(self.gpio))
         GPIO.output(int(self.gpio), 0)
 
 
@@ -95,7 +95,7 @@ class Dummy(ActorBase):
         :param power: int value between 0 - 100
         :return:
         '''
-        cbpi.app.logger("Dummy %s ON" % str(self.id))
+        cbpi.app.logger.info("Dummy %s ON" % str(self.id))
 
     def off(self):
-        cbpi.app.logger("Dummy %s OFF" % str(self.id))
+        cbpi.app.logger.info("Dummy %s OFF" % str(self.id))
