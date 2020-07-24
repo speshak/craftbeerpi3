@@ -25,7 +25,6 @@ class ActorController(object):
 
 
 class SensorController(object):
-
     @cbpi.try_catch(None)
     def get_sensor_value(self, id=None):
 
@@ -68,6 +67,10 @@ class ControllerBase(object):
     def run(self):
         pass
 
+    def get_resource(self, resource_type, id):
+        """Get a resource from the cache"""
+        return self.api.cache.get(resource_type).get(int(id))
+
 
 class KettleController(ControllerBase, ActorController, SensorController):
 
@@ -91,13 +94,13 @@ class KettleController(ControllerBase, ActorController, SensorController):
 
     @cbpi.try_catch(None)
     def heater_on(self, power=100):
-        k = self.api.cache.get("kettle").get(self.kettle_id)
+        k = self.get_resource("kettle", self.kettle_id)
         if k.heater is not None:
             self.actor_on(power, int(k.heater))
 
     @cbpi.try_catch(None)
     def heater_off(self):
-        k = self.api.cache.get("kettle").get(self.kettle_id)
+        k = self.get_resource("kettle", self.kettle_id)
         if k.heater is not None:
             self.actor_off(int(k.heater))
 
@@ -105,13 +108,13 @@ class KettleController(ControllerBase, ActorController, SensorController):
     def get_temp(self, id=None):
         if id is None:
             id = self.kettle_id
-        return self.get_sensor_value(int(self.api.cache.get("kettle").get(id).sensor))
+        return self.get_sensor_value(int(self.get_resource("kettle", id).sensor))
 
     @cbpi.try_catch(None)
     def get_target_temp(self, id=None):
         if id is None:
             id = self.kettle_id
-        return self.api.cache.get("kettle").get(id).target_temp
+        return self.get_resource("kettle", id).target_temp
 
 
 class FermenterController(ControllerBase, ActorController, SensorController):
@@ -138,35 +141,34 @@ class FermenterController(ControllerBase, ActorController, SensorController):
     def get_target_temp(self, id=None):
         if id is None:
             id = self.fermenter_id
-        return self.api.cache.get("fermenter").get(id).target_temp
+        return self.get_resource("fermenter", id).target_temp
 
     @cbpi.try_catch(None)
     def heater_on(self, power=100):
-        f = self.api.cache.get("fermenter").get(self.fermenter_id)
+        f = self.get_resource("fermenter", self.fermenter_id)
         if f.heater is not None:
             self.actor_on(power, int(f.heater))
 
     @cbpi.try_catch(None)
     def heater_off(self):
-        f = self.api.cache.get("fermenter").get(self.fermenter_id)
+        f = self.get_resource("fermenter", self.fermenter_id)
         if f.heater is not None:
             self.actor_off(int(f.heater))
 
     @cbpi.try_catch(None)
     def cooler_on(self, power=100):
-        f = self.api.cache.get("fermenter").get(self.fermenter_id)
+        f = self.get_resource("fermenter", self.fermenter_id)
         if f.cooler is not None:
             self.actor_on(power, int(f.cooler))
 
     @cbpi.try_catch(None)
     def cooler_off(self):
-        f = self.api.cache.get("fermenter").get(self.fermenter_id)
+        f = self.get_resource("fermenter", self.fermenter_id)
         if f.cooler is not None:
             self.actor_off(int(f.cooler))
 
     @cbpi.try_catch(None)
     def get_temp(self, id=None):
-
         if id is None:
             id = self.fermenter_id
-        return self.get_sensor_value(int(self.api.cache.get("fermenter").get(id).sensor))
+        return self.get_sensor_value(int(self.get_resource("fermenter", id).sensor))
