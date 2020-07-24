@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-from modules import socketio, app, cbpi
+from modules.app_config import cbpi, app, socketio
 
 try:
     port = int(cbpi.get_config_parameter('port', '5000'))

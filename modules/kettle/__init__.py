@@ -1,5 +1,5 @@
 from flask_classy import route
-from modules import cbpi
+from modules.app_config import cbpi
 from modules.core.baseview import BaseView
 from modules.core.db import DBModel
 

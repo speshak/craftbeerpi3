@@ -1,4 +1,4 @@
-from modules import cbpi
+from modules.app_config import cbpi
 from modules.core.controller import KettleController
 from modules.core.props import Property
 

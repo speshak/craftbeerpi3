@@ -1,6 +1,6 @@
 from flask import request, json
 from flask_classy import route, FlaskView
-from modules import cbpi
+from modules.app_config import cbpi
 
 
 class BaseView(FlaskView):

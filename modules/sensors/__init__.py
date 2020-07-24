@@ -1,12 +1,14 @@
-import time
 from flask_classy import route
-from modules import DBModel, cbpi
+from modules.app_config import cbpi
+from modules.core.db import DBModel
 from modules.core.baseview import BaseView
 
+
 class Sensor(DBModel):
-    __fields__ = ["name","type", "config", "hide"]
+    __fields__ = ["name", "type", "config", "hide"]
     __table_name__ = "sensor"
     __json_fields__ = ["config"]
+
 
 class SensorView(BaseView):
     model = Sensor
@@ -14,7 +16,6 @@ class SensorView(BaseView):
 
     @route('<int:id>/action/<method>', methods=["POST"])
     def action(self, id, method):
-
         cbpi.cache.get("sensors").get(id).instance.__getattribute__(method)()
         return ('', 204)
 
@@ -28,9 +29,9 @@ class SensorView(BaseView):
     def _pre_delete_callback(self, m):
         cbpi.stop_sensor(m.id)
 
+
 @cbpi.initalizer(order=1000)
 def init(cbpi):
-
     SensorView.register(cbpi.app, route_base='/api/sensor')
     SensorView.init_cache()
     cbpi.init_sensors()

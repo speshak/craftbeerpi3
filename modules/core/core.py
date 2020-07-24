@@ -32,18 +32,24 @@ class ActorAPI(object):
         try:
             value = self.cache.get("actors").get(int(id))
             cfg = value.config.copy()
-            cfg.update(dict(api=self, id=id, name=value.name))
+            cfg.update({
+                "api": self,
+                "id": id,
+                "name": value.name
+                })
+
             clazz = self.cache.get("actor_types").get(value.type).get("class")
             value.instance = clazz(**cfg)
             value.instance.init()
             value.state = 0
             value.power = 100
+
         except Exception as e:
             self.notify("Actor Error",
                         "Failed to setup actor %s. Please check the configuraiton" % value.name,
                         type="danger", timeout=None)
             self.app.logger.error("Initializing of Actor %s failed %s" % (
-                                  id, str(e)))
+                                  id, traceback.format_exc(e)))
 
     def switch_actor_on(self, id, power=None):
         actor = self.cache.get("actors").get(id)
@@ -96,7 +102,7 @@ class SensorAPI(object):
         try:
             self.cache.get("sensors").get(id).instance.stop()
         except Exception as e:
-            self.app.logger.info("Stop Sensor Error %s" % str(e))
+            self.app.logger.info("Stop Sensor Error %s" % traceback.format_exc(e))
 
     def init_sensor(self, id):
         '''
@@ -135,7 +141,7 @@ class SensorAPI(object):
         except Exception as e:
             self.notify("Sensor Error", "Failed to setup Sensor %s. Please check the configuraiton" % value.name, type="danger", timeout=None)
             self.app.logger.error("Initializing of Sensor %s failed: %s" % (
-                                  id, str(e)))
+                                  id, traceback.format_exc(e)))
 
     def receive_sensor_value(self, id, value):
         self.emit("SENSOR_UPDATE", self.cache.get("sensors")[id])
@@ -165,7 +171,7 @@ class SensorAPI(object):
             return float(self.cache.get("sensors")[id].instance.last_value)
         except Exception as e:
             self.app.logger.error("Error getting sensor ID %s value %s" % (
-                                  id, str(e)))
+                                  id, traceback.format_exc(e)))
             return None
 
 
@@ -245,7 +251,8 @@ class CraftBeerPi(ActorAPI, SensorAPI):
             c = Config.update(**update_data)
             self.emit("UPDATE_CONFIG", c)
 
-    def add_config_parameter(self, name, value, type, description, options=None):
+    def add_config_parameter(self, name, value,
+                             type, description, options=None):
         from modules.config import Config
         with self.app.app_context():
             c = Config.insert(**{
@@ -589,7 +596,9 @@ class CraftBeerPi(ActorAPI, SensorAPI):
                 try:
                     method(self)
                 except Exception as e:
-                    self.app.logger.error("Exception" + method.__name__ + ": " + str(e))
+                    self.app.logger.error("Exception %s: %s" % (
+                                              method.__name__,
+                                              traceback.format_exc(e)))
                 self.socketio.sleep(interval)
 
         for value in self.cache.get("background"):

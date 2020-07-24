@@ -2,7 +2,8 @@ import time
 from flask import request
 from flask_classy import route
 
-from modules import DBModel, cbpi, get_db
+from modules.app_config import cbpi
+from modules.core.db import DBModel, get_db
 from modules.core.baseview import BaseView
 
 
@@ -258,7 +259,7 @@ class FermenterView(BaseView):
         return ('', 204)
 
     def get_fermenter(self, id):
-        return cbpi.cache["fermenter"].get(id)
+        return cbpi.cache["fermenter"].get(int(id))
 
     def target_temp_reached(self, id, step):
         timestamp = time.time()

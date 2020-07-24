@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
 
-
 from modules.core.props import Property, StepProperty
 from modules.core.step import StepBase
-from modules import cbpi
-
+from modules.app_config import cbpi
 
 
 @cbpi.step
@@ -14,13 +12,20 @@ class MashStep(StepBase):
     Just put the decorator @cbpi.step on top of a method
     '''
     # Properties
-    temp = Property.Number("Temperature", configurable=True, description="Target Temperature of Mash Step")
-    kettle = StepProperty.Kettle("Kettle", description="Kettle in which the mashing takes place")
-    timer = Property.Number("Timer in Minutes", configurable=True, description="Timer is started when the target temperature is reached")
+    temp = Property.Number("Temperature",
+                           configurable=True,
+                           description="Target Temperature of Mash Step")
+    kettle = StepProperty.Kettle("Kettle",
+                                 description="Kettle in which the mashing "
+                                             "takes place")
+    timer = Property.Number("Timer in Minutes", configurable=True,
+                            description="Timer is started when the "
+                                        "target temperature is reached")
 
     def init(self):
         '''
-        Initialize Step. This method is called once at the beginning of the step
+        Initialize Step. This method is called once at the beginning of the
+        step
         :return:
         '''
         # set target tep
@@ -56,8 +61,9 @@ class MashStep(StepBase):
                 self.start_timer(int(self.timer) * 60)
 
         # Check if timer finished and go to next step
-        if self.is_timer_finished() == True:
-            self.notify("Mash Step Completed!", "Starting the next step", timeout=None)
+        if self.is_timer_finished():
+            self.notify("Mash Step Completed!",
+                        "Starting the next step", timeout=None)
             self.next()
 
 
@@ -77,14 +83,13 @@ class MashInStep(StepBase):
 
     def init(self):
         '''
-        Initialize Step. This method is called once at the beginning of the step
+        Initialize Step. This method is called once at the beginning of the
+        step
         :return:
         '''
         # set target tep
         self.s = False
         self.set_target_temp(self.temp, self.kettle)
-
-
 
     def execute(self):
         '''
@@ -96,7 +101,6 @@ class MashInStep(StepBase):
         if self.get_kettle_temp(self.kettle) >= float(self.temp) and self.s is False:
             self.s = True
             self.notify("Step Temp Reached!", "Please press the next button to continue", timeout=None)
-
 
 
 @cbpi.step
@@ -112,7 +116,6 @@ class ChilStep(StepBase):
     def reset(self):
         self.stop_timer()
 
-
     def finish(self):
         pass
 
@@ -120,8 +123,9 @@ class ChilStep(StepBase):
         if self.is_timer_finished() is None:
             self.start_timer(int(self.timer) * 60)
 
-        if self.is_timer_finished() == True:
+        if self.is_timer_finished():
             self.next()
+
 
 @cbpi.step
 class PumpStep(StepBase):
@@ -137,7 +141,6 @@ class PumpStep(StepBase):
     def reset(self):
         self.stop_timer()
 
-
     def finish(self):
         self.actor_off(int(self.pump))
 
@@ -148,8 +151,9 @@ class PumpStep(StepBase):
         if self.is_timer_finished() is None:
             self.start_timer(int(self.timer) * 60)
 
-        if self.is_timer_finished() == True:
+        if self.is_timer_finished():
             self.next()
+
 
 @cbpi.step
 class BoilStep(StepBase):
@@ -161,7 +165,7 @@ class BoilStep(StepBase):
     kettle = StepProperty.Kettle("Kettle", description="Kettle in which the boiling step takes place")
     timer = Property.Number("Timer in Minutes", configurable=True, default_value=90, description="Timer is started when target temperature is reached")
     hop_1 = Property.Number("Hop 1 Addition", configurable=True, description="Fist Hop alert")
-    hop_1_added = Property.Number("",default_value=None)
+    hop_1_added = Property.Number("", default_value=None)
     hop_2 = Property.Number("Hop 2 Addition", configurable=True, description="Second Hop alert")
     hop_2_added = Property.Number("", default_value=None)
     hop_3 = Property.Number("Hop 3 Addition", configurable=True)
@@ -173,20 +177,19 @@ class BoilStep(StepBase):
 
     def init(self):
         '''
-        Initialize Step. This method is called once at the beginning of the step
+        Initialize Step. This method is called once at the beginning of the
+        step
         :return:
         '''
         # set target tep
         self.set_target_temp(self.temp, self.kettle)
 
-
-
-
     @cbpi.action("Start Timer Now")
     def start(self):
         '''
         Custom Action which can be execute form the brewing dashboard.
-        All method with decorator @cbpi.action("YOUR CUSTOM NAME") will be available in the user interface
+        All method with decorator @cbpi.action("YOUR CUSTOM NAME") will be
+        available in the user interface
         :return:
         '''
         if self.is_timer_finished() is None:
@@ -198,7 +201,6 @@ class BoilStep(StepBase):
 
     def finish(self):
         self.set_target_temp(0, self.kettle)
-
 
     def check_hop_timer(self, number, value):
 
@@ -224,6 +226,6 @@ class BoilStep(StepBase):
                 self.check_hop_timer(4, self.hop_4)
                 self.check_hop_timer(5, self.hop_5)
         # Check if timer finished and go to next step
-        if self.is_timer_finished() == True:
+        if self.is_timer_finished():
             self.notify("Boil Step Completed!", "Starting the next step", timeout=None)
             self.next()

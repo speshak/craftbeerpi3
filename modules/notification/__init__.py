@@ -1,6 +1,6 @@
 import json
 from flask_classy import FlaskView, route
-from modules import cbpi
+from modules.app_config import cbpi
 
 
 class NotificationView(FlaskView):

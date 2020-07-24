@@ -2,7 +2,8 @@ import time
 from flask import json, request
 from flask_classy import route
 
-from modules import DBModel, cbpi, get_db
+from modules.app_config import cbpi
+from modules.core.db import DBModel, get_db
 from modules.core.baseview import BaseView
 
 

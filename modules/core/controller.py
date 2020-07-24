@@ -1,4 +1,4 @@
-from modules import cbpi
+from modules.app_config import cbpi
 
 
 class ActorController(object):

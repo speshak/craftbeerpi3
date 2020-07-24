@@ -1,8 +1,6 @@
 from flask import Flask, render_template, redirect
 from flask_socketio import SocketIO, emit
 
-
-from app_config import *
 import pprint
 
 from modules.core.db import get_db
@@ -21,8 +19,7 @@ import modules.buzzer
 import modules.kettle
 import modules.recipe_import
 import modules.core.db_mirgrate
-
-from app_config import cbpi
+from app_config import cbpi, app
 
 
 pp = pprint.PrettyPrinter(indent=6)

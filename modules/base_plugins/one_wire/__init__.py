@@ -2,7 +2,7 @@
 import os
 from subprocess import call
 
-from modules import cbpi, app
+from modules.app_config import cbpi, app
 from modules.core.hardware import SensorPassive
 import threading
 import time
