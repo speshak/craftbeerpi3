@@ -4,14 +4,12 @@ from modules.app_config import cbpi
 
 
 class BaseView(FlaskView):
-
     as_array = False
     cache_key = None
     api = cbpi
 
     @route('/<int:id>', methods=["GET"])
     def getOne(self, id):
-
         if self.api.cache.get(self.cache_key) is not None:
             return json.dumps(self.api.cache.get(self.cache_key).get(id))
         else:
@@ -77,14 +75,20 @@ class BaseView(FlaskView):
 
     @route('/<int:id>', methods=["DELETE"])
     def delete(self, id):
-        if self.api.cache.get(self.cache_key) is not None:
-            self._pre_delete_callback(self.api.cache.get(self.cache_key)[id])
+        if self._get_resource() is not None:
+            self._pre_delete_callback(self._get_resource(id))
             del self.api.cache.get(self.cache_key)[id]
         self.model.delete(id)
 
         def _post_delete_callback(self, id):
             pass
         return ('', 204)
+
+    def _get_resource(self, id=None):
+        if id is None:
+            return self.api.cache.get(self.cache_key)
+        else:
+            return self.api.cache.get(self.cache_key)[int(id)]
 
     @classmethod
     def post_init_callback(cls, obj):
