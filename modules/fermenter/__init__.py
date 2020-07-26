@@ -230,13 +230,18 @@ class FermenterView(BaseView):
     def toggle(self, id):
         try:
             fermenter = self._get_resource(id)
-            print(fermenter.state)
+
             if fermenter.state is False:
                 # Start controller
                 if fermenter.logic is not None:
                     cfg = fermenter.config.copy()
-                    cfg.update(
-                        dict(api=cbpi, fermenter_id=fermenter.id, heater=fermenter.heater, sensor=fermenter.sensor))
+                    cfg.update({
+                        "api": cbpi,
+                        "fermenter_id": fermenter.id,
+                        "heater": fermenter.heater,
+                        "sensor": fermenter.sensor,
+                    })
+
                     instance = cbpi.get_fermentation_controller(fermenter.logic).get("class")(**cfg)
                     instance.init()
                     fermenter.instance = instance
@@ -246,7 +251,9 @@ class FermenterView(BaseView):
                         fermenter.state = not fermenter.state
                         cbpi.emit("UPDATE_FERMENTER", self._get_resource(id))
 
-                    cbpi.socketio.start_background_task(target=run, instance=instance)
+                    cbpi.socketio.start_background_task(
+                                                        target=run,
+                                                        instance=instance)
                 fermenter.state = not fermenter.state
                 cbpi.emit("UPDATE_FERMENTER", self._get_resource(id))
             else:
