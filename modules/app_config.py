@@ -4,7 +4,8 @@ from flask_socketio import SocketIO, emit
 import logging
 import logging.handlers
 
-from modules.core.core import CraftBeerPi, ActorBase, SensorBase
+from modules.core.core import CraftBeerPi
+from modules.core.hardware import ActorBase, SensorBase
 from modules.core.db import DBModel
 
 

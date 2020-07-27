@@ -1,23 +1,15 @@
 import inspect
-import pprint
-
-import sqlite3
-from flask import make_response, g
-import datetime
+import uuid
+from flask import make_response
 from datetime import datetime
-from flask.views import MethodView
-from flask_classy import FlaskView, route
+import traceback
 
 from time import localtime, strftime
 from functools import wraps, update_wrapper
 
 
-from props import *
-
-from hardware import *
-
-import time
-import uuid
+from props import Property, StepProperty
+from hardware import SensorPassive
 
 
 class NotificationAPI(object):
@@ -40,16 +32,24 @@ class ActorAPI(object):
         try:
             value = self.cache.get("actors").get(int(id))
             cfg = value.config.copy()
-            cfg.update(dict(api=self, id=id, name=value.name))
+            cfg.update({
+                "api": self,
+                "id": id,
+                "name": value.name
+                })
+
             clazz = self.cache.get("actor_types").get(value.type).get("class")
             value.instance = clazz(**cfg)
             value.instance.init()
             value.state = 0
             value.power = 100
+
         except Exception as e:
-            self.notify("Actor Error", "Failed to setup actor %s. Please check the configuraiton" % value.name,
+            self.notify("Actor Error",
+                        "Failed to setup actor %s. Please check the configuraiton" % value.name,
                         type="danger", timeout=None)
-            self.app.logger.error("Initializing of Actor %s failed" % id)
+            self.app.logger.error("Initializing of Actor %s failed %s" % (
+                                  id, traceback.format_exc(e)))
 
     def switch_actor_on(self, id, power=None):
         actor = self.cache.get("actors").get(id)
@@ -102,9 +102,7 @@ class SensorAPI(object):
         try:
             self.cache.get("sensors").get(id).instance.stop()
         except Exception as e:
-
-            self.app.logger.info("Stop Sensor Error")
-            pass
+            self.app.logger.info("Stop Sensor Error %s" % traceback.format_exc(e))
 
     def init_sensor(self, id):
         '''
@@ -137,13 +135,13 @@ class SensorAPI(object):
             else:
                 # Active Sensors
                 value.mode = "A"
-                t = self.socketio.start_background_task(
+                self.socketio.start_background_task(
                         target=start_active_sensor, instance=value.instance)
 
         except Exception as e:
-
             self.notify("Sensor Error", "Failed to setup Sensor %s. Please check the configuraiton" % value.name, type="danger", timeout=None)
-            self.app.logger.error("Initializing of Sensor %s failed" % id)
+            self.app.logger.error("Initializing of Sensor %s failed: %s" % (
+                                  id, traceback.format_exc(e)))
 
     def receive_sensor_value(self, id, value):
         self.emit("SENSOR_UPDATE", self.cache.get("sensors")[id])
@@ -172,7 +170,8 @@ class SensorAPI(object):
             id = int(id)
             return float(self.cache.get("sensors")[id].instance.last_value)
         except Exception as e:
-
+            self.app.logger.error("Error getting sensor ID %s value %s" % (
+                                  id, traceback.format_exc(e)))
             return None
 
 
@@ -193,7 +192,6 @@ class CacheAPI(object):
 class CraftBeerPi(ActorAPI, SensorAPI):
 
     cache = {
-        "init": {},
         "config": {},
         "actor_types": {},
         "sensor_types": {},
@@ -253,7 +251,8 @@ class CraftBeerPi(ActorAPI, SensorAPI):
             c = Config.update(**update_data)
             self.emit("UPDATE_CONFIG", c)
 
-    def add_config_parameter(self, name, value, type, description, options=None):
+    def add_config_parameter(self, name, value,
+                             type, description, options=None):
         from modules.config import Config
         with self.app.app_context():
             c = Config.insert(**{
@@ -287,30 +286,74 @@ class CraftBeerPi(ActorAPI, SensorAPI):
         for m in members:
             if isinstance(tmpObj.__getattribute__(m), Property.Number):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append(
-                    {"name": m, "label": t.label, "type": "number", "configurable": t.configurable, "description": t.description, "default_value": t.default_value})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "number",
+                    "configurable": t.configurable,
+                    "description": t.description,
+                    "default_value": t.default_value,
+                    })
+
             elif isinstance(tmpObj.__getattribute__(m), Property.Text):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append(
-                    {"name": m, "label": t.label, "type": "text", "configurable": t.configurable, "default_value": t.default_value, "description": t.description})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "text",
+                    "configurable": t.configurable,
+                    "default_value": t.default_value,
+                    "description": t.description,
+                    })
+
             elif isinstance(tmpObj.__getattribute__(m), Property.Select):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append(
-                    {"name": m, "label": t.label, "type": "select",  "configurable": True, "options": t.options, "description": t.description})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "select",
+                    "configurable": True,
+                    "options": t.options,
+                    "description": t.description,
+                    })
+
             elif isinstance(tmpObj.__getattribute__(m), Property.Actor):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append({"name": m, "label": t.label, "type": "actor",  "configurable": t.configurable, "description": t.description})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "actor",
+                    "configurable": t.configurable,
+                    "description": t.description,
+                    })
+
             elif isinstance(tmpObj.__getattribute__(m), Property.Sensor):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append({"name": m, "label": t.label, "type": "sensor", "configurable": t.configurable, "description": t.description})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "sensor",
+                    "configurable": t.configurable,
+                    "description": t.description,
+                    })
+
             elif isinstance(tmpObj.__getattribute__(m), Property.Kettle):
                 t = tmpObj.__getattribute__(m)
-                self.cache[key][name]["properties"].append({"name": m, "label": t.label, "type": "kettle", "configurable": t.configurable, "description": t.description})
+                self.cache[key][name]["properties"].append({
+                    "name": m,
+                    "label": t.label,
+                    "type": "kettle",
+                    "configurable": t.configurable,
+                    "description": t.description,
+                    })
 
         for name, method in cls.__dict__.iteritems():
             if hasattr(method, "action"):
                 label = method.__getattribute__("label")
-                self.cache[key][cls.__name__]["actions"].append({"method": name, "label": label})
+                self.cache[key][cls.__name__]["actions"].append({
+                    "method": name,
+                    "label": label,
+                    })
 
         return cls
 
@@ -423,17 +466,19 @@ class CraftBeerPi(ActorAPI, SensorAPI):
         for name, method in cls.__dict__.iteritems():
             if hasattr(method, "action"):
                 label = method.__getattribute__("label")
-                self.cache[key][cls.__name__]["actions"].append({"method": name, "label": label})
+                self.cache[key][cls.__name__]["actions"].append({
+                    "method": name,
+                    "label": label})
 
         return cls
 
     # Event Bus
-    def event(self, name, async=False):
+    def event(self, name, asynk=False):
 
         def real_decorator(function):
             if self.eventbus.get(name) is None:
                 self.eventbus[name] = []
-            self.eventbus[name].append({"function": function, "async": async})
+            self.eventbus[name].append({"function": function, "async": asynk})
 
             def wrapper(*args, **kwargs):
                 return function(*args, **kwargs)
@@ -448,7 +493,8 @@ class CraftBeerPi(ActorAPI, SensorAPI):
             if i["async"] is False:
                 i["function"](**kwargs)
             else:
-                t = self.socketio.start_background_task(target=i["function"], **kwargs)
+                self.socketio.start_background_task(
+                        target=i["function"], **kwargs)
 
     # initializer decorator
     def initalizer(self, order=0):
@@ -467,8 +513,10 @@ class CraftBeerPi(ActorAPI, SensorAPI):
                     return function(*args, **kwargs)
                 except Exception as e:
                     self.app.logger.error(
-                            "Exception in function %s. Return default %s"
-                            % (function.__name__, errorResult))
+                            "Exception in function %s. Return default %s %s"
+                            % (function.__name__,
+                               errorResult,
+                               traceback.format_exc(e)))
                     return errorResult
             return wrapper
 
@@ -479,8 +527,10 @@ class CraftBeerPi(ActorAPI, SensorAPI):
         def no_cache(*args, **kwargs):
             response = make_response(view(*args, **kwargs))
             response.headers['Last-Modified'] = datetime.now()
-            response.headers[
-                'Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+            response.headers['Cache-Control'] = ('no-store, no-cache, '
+                                                 'must-revalidate, '
+                                                 'post-check=0, pre-check=0, '
+                                                 'max-age=0')
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '-1'
             return response
@@ -492,7 +542,9 @@ class CraftBeerPi(ActorAPI, SensorAPI):
             value = self.cache.get("kettle").get(id)
             value["state"] = False
         except Exception:
-            self.notify("Kettle Setup Failed", "Please check %s configuration" % value.name, type="danger", timeout=None)
+            self.notify("Kettle Setup Failed",
+                        "Please check %s configuration" % value.name,
+                        type="danger", timeout=None)
             self.app.logger.error("Initializing of Kettle %s failed" % id)
 
     def run_init(self):
@@ -501,9 +553,14 @@ class CraftBeerPi(ActorAPI, SensorAPI):
         :return:
         '''
         self.app.logger.info("Invoke Init")
-        self.cache["init"] = sorted(self.cache["init"], key=lambda k: k['order'])
+        self.cache["init"] = sorted(self.cache["init"],
+                                    key=lambda k: k['order'])
+
         for i in self.cache.get("init"):
-            self.app.logger.info("INITIALIZER - METHOD %s PAHT %s: " % (i.get("function").__name__, str(inspect.getmodule(i.get("function")).__file__)))
+            self.app.logger.info("INITIALIZER - METHOD %s PAHT %s: " % (
+                                 i.get("function").__name__,
+                                 str(inspect.getmodule(i.get("function")).__file__)))
+
             i.get("function")(self)
 
     def backgroundtask(self, key, interval, config_parameter=None):
@@ -539,8 +596,14 @@ class CraftBeerPi(ActorAPI, SensorAPI):
                 try:
                     method(self)
                 except Exception as e:
-                    self.app.logger.error("Exception" + method.__name__ + ": " + str(e))
+                    self.app.logger.error("Exception %s: %s" % (
+                                              method.__name__,
+                                              traceback.format_exc(e)))
                 self.socketio.sleep(interval)
 
         for value in self.cache.get("background"):
-            t = self.socketio.start_background_task(target=job,  interval=value.get("interval"),  method=value.get("function"))
+            self.socketio.start_background_task(
+                    target=job,
+                    interval=value.get("interval"),
+                    method=value.get("function")
+                )

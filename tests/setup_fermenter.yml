@@ -33,6 +33,7 @@ stages:
         name: "Chiller"
         hide: false
         type: "Dummy"
+        config: {}
     response:
       status_code: 200
       json:
@@ -48,7 +49,7 @@ stages:
       url: "{base_host}/api/fermenter/"
       method: POST
       json:
-        name: "Fermenterr"
+        name: "Fermenter"
         heater: ""
         cooler: "{chiller_id}"
         sensor: "{sensor_id}"
@@ -59,9 +60,34 @@ stages:
           cooler_offset_max: 0
           cooler_offset_min: 0
           heater_offset_max: 0
-          heater_offset_mix: 0
+          heater_offset_min: 0
     response:
       status_code: 200
       save:
         json:
           fermenter_id: id
+
+
+  - name: Delete fermenter
+    id: delete_fermenter
+    request:
+      url: "{base_host}/api/fermenter/{fermenter_id}"
+      method: DELETE
+    response:
+      status_code: 204
+
+  - name: Delete sensor
+    id: delete_sensor
+    request:
+      url: "{base_host}/api/sensor/{sensor_id}"
+      method: DELETE
+    response:
+      status_code: 204
+
+  - name: Delete chiller
+    id: delete_chiller
+    request:
+      url: "{base_host}/api/actor/{chiller_id}"
+      method: DELETE
+    response:
+      status_code: 204

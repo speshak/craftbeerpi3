@@ -1,9 +1,8 @@
 import json
 
-import sys
 from flask import Blueprint, request, send_from_directory
 from importlib import import_module
-from modules import socketio, cbpi
+from modules.app_config import cbpi
 
 
 from git import Repo
@@ -163,7 +162,6 @@ def download_addon(name):
 def update_addon(name):
     repo = Repo("./modules/plugins/%s/" % (name))
     o = repo.remotes.origin
-    info = o.pull()
     cbpi.notify("Plugin Updated", "Plugin %s updated successfully. Please restart the system" % name)
     return ('', 204)
 
@@ -188,6 +186,7 @@ def loadPlugins():
         except Exception as e:
             cbpi.notify("Failed to load plugin %s " % filename, str(e), type="danger", timeout=None)
             cbpi.app.logger.error(e)
+
 
 #@cbpi.initalizer(order=1)
 def initPlugins():

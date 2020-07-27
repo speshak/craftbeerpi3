@@ -21,6 +21,14 @@ stages:
     response:
       status_code: 204
 
+  - name: Set brew name - bogus fermenter
+    request:
+      url: "{base_host}/api/fermenter/9999/brewname"
+      method: POST
+      json:
+        brewname: "Test Brew"
+    response:
+      status_code: 404
 
   - name: Add step
     request:
@@ -35,3 +43,40 @@ stages:
         hours: "12"
     response:
       status_code: 204
+
+
+  - name: Start the steps
+    request:
+      url: "{base_host}/api/fermenter/{fermenter_id}/start"
+      method: POST
+    response:
+      status_code: 204
+
+  - name: Start the steps - bogus fermenter
+    request:
+      url: "{base_host}/api/fermenter/9999/start"
+      method: POST
+    response:
+      status_code: 404
+
+
+  - name: Enable automatic control
+    request:
+      url: "{base_host}/api/fermenter/{fermenter_id}/automatic"
+      method: POST
+    response:
+      status_code: 204
+
+  - name: Enable automatic control - bogus fermenter
+    request:
+      url: "{base_host}/api/fermenter/9999/automatic"
+      method: POST
+    response:
+      status_code: 404
+
+  - type: ref
+    id: delete_fermenter
+  - type: ref
+    id: delete_sensor
+  - type: ref
+    id: delete_chiller

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from modules import cbpi
+from modules.app_config import cbpi
 from modules.core.hardware import SensorActive
 from modules.core.props import Property
 

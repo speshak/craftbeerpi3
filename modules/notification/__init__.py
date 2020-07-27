@@ -1,6 +1,6 @@
 import json
 from flask_classy import FlaskView, route
-from modules import cbpi
+from modules.app_config import cbpi
 
 
 class NotificationView(FlaskView):
@@ -27,7 +27,7 @@ class NotificationView(FlaskView):
         return ('', 204)
 
 
-@cbpi.event("MESSAGE", async=True)
+@cbpi.event("MESSAGE", asynk=True)
 def messageEvent(message, **kwargs):
     """
     React on message event. add the message to the cache and push the message
@@ -53,7 +53,8 @@ def init(cbpi):
             "id": len(cbpi.cache["messages"]),
             "type": "info",
             "headline": "Support CraftBeerPi with your donation",
-            "message": "You will find the PayPay Donation button in the system menu",
+            "message": "You will find the PayPay Donation "
+                       "button in the system menu",
             "read": False
         }
         cbpi.cache["messages"].append(msg)

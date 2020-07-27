@@ -5,7 +5,6 @@ from git import Repo, Git
 
 from modules.app_config import cbpi
 
-import pprint
 import time
 
 
@@ -117,9 +116,6 @@ class SystemView(FlaskView):
 
     @route('/endpoints', methods=['GET'])
     def endpoints(self):
-        for f in self.api.app.view_functions:
-            print(f)
-
         endpoints = {}
         re = {
             "swagger": "2.0",
@@ -152,7 +148,6 @@ class SystemView(FlaskView):
                         },
                     }
 
-        pprint.pprint(re)
         return Response(yaml.dump(re), mimetype='text/yaml')
 
 

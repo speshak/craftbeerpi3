@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from modules import cbpi
+from modules.app_config import cbpi
 from db import get_db
 
 
@@ -34,8 +34,9 @@ def init(app=None):
             cur.execute("SELECT max(version) as m FROM schema_info")
             m = cur.fetchone()
             current_version = m["m"]
-        except:
+        except Exception:
             pass
+
         result = []
         for filename in os.listdir("./update"):
             if filename.endswith(".sql"):

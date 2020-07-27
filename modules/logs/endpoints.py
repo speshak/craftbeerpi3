@@ -2,7 +2,7 @@ import datetime
 import os
 from flask import Blueprint, request, send_from_directory, json
 from flask_classy import FlaskView, route
-from modules import cbpi
+from modules.app_config import cbpi
 
 
 class LogView(FlaskView):
@@ -18,7 +18,7 @@ class LogView(FlaskView):
     @route('/actions')
     def actions(self):
         filename = "./logs/action.log"
-        if os.path.isfile(filename) == False:
+        if not os.path.isfile(filename):
             return
         import csv
         array = []
@@ -27,7 +27,7 @@ class LogView(FlaskView):
             for row in reader:
                 try:
                     array.append([int((datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S") - datetime.datetime(1970, 1, 1)).total_seconds()) * 1000, row[1]])
-                except:
+                except Exception:
                     pass
         return json.dumps(array)
 
@@ -42,7 +42,7 @@ class LogView(FlaskView):
             return ('File Not Found', 404)
 
         filename = "./logs/%s" % file
-        if os.path.isfile(filename) == True:
+        if os.path.isfile(filename):
             os.remove(filename)
             cbpi.notify("log deleted succesfully", "")
         else:
@@ -51,7 +51,7 @@ class LogView(FlaskView):
 
     def read_log_as_json(self, type, id):
         filename = "./logs/%s_%s.log" % (type, id)
-        if os.path.isfile(filename) == False:
+        if not os.path.isfile(filename):
             return
 
         import csv
@@ -61,28 +61,36 @@ class LogView(FlaskView):
             for row in reader:
                 try:
                     array.append([int((datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S") - datetime.datetime(1970, 1, 1)).total_seconds()) * 1000, float(row[1])])
-                except:
+                except Exception:
                     pass
         return array
 
     def convert_chart_data_to_json(self, chart_data):
-        return {"name": chart_data["name"], "data": self.read_log_as_json(chart_data["data_type"], chart_data["data_id"])}
+        return {
+            "name": chart_data["name"],
+            "data": self.read_log_as_json(
+                chart_data["data_type"], chart_data["data_id"])
+        }
 
     @route('/<t>/<int:id>', methods=["POST"])
     def get_logs_as_json(self, t, id):
-        data = request.json
         result = []
         if t == "s":
             name = cbpi.cache.get("sensors").get(id).name
-            result.append({"name": name, "data": self.read_log_as_json("sensor", id)})
+            result.append({
+                "name": name,
+                "data": self.read_log_as_json("sensor", id)
+                })
 
         if t == "k":
             kettle = cbpi.cache.get("kettle").get(id)
-            result = map(self.convert_chart_data_to_json, cbpi.get_controller(kettle.logic).get("class").chart(kettle))
+            result = map(self.convert_chart_data_to_json,
+                         cbpi.get_controller(kettle.logic).get("class").chart(kettle))
 
         if t == "f":
             fermenter = cbpi.cache.get("fermenter").get(id)
-            result = map(self.convert_chart_data_to_json, cbpi.get_fermentation_controller(fermenter.logic).get("class").chart(fermenter))
+            result = map(self.convert_chart_data_to_json,
+                         cbpi.get_fermentation_controller(fermenter.logic).get("class").chart(fermenter))
 
         return json.dumps(result)
 
@@ -98,6 +106,7 @@ class LogView(FlaskView):
         pattern = re.compile('^([A-Za-z0-9-_])+.log$')
 
         return True if pattern.match(name) else False
+
 
 @cbpi.initalizer()
 def init(app):

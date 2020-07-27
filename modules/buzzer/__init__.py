@@ -1,15 +1,16 @@
 import time
 from thread import start_new_thread
-from modules import cbpi
+from modules.app_config import cbpi
 
 try:
     import RPi.GPIO as GPIO
-except Exception as e:
+except ImportError:
     pass
 
-class Buzzer(object):
 
+class Buzzer(object):
     sound = ["H", 0.1, "L", 0.1, "H", 0.1, "L", 0.1, "H", 0.1, "L"]
+
     def __init__(self, gpio, beep_level):
         try:
             cbpi.app.logger.info("INIT BUZZER NOW GPIO%s" % gpio)
@@ -42,10 +43,11 @@ class Buzzer(object):
                             GPIO.output(int(self.gpio), GPIO.HIGH)
                     else:
                         time.sleep(i)
-            except Exception as e:
+            except Exception:
                 pass
 
         start_new_thread(play, (self.sound,))
+
 
 @cbpi.initalizer(order=1)
 def init(cbpi):
